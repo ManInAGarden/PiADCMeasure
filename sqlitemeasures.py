@@ -55,14 +55,16 @@ class Unit(sqlp.PBaseTimed):
         print("creating vanilla data for units")
         cls.create_units('V', -3, 3)
         cls.create_units('A', -3, 3)
-        cls.create_units('s', -6, 6)
+        cls.create_units('s', -6, 0)
         cls.create_units('Ah', -3, 3)
-        cls.create_units('°C', 0, 0)
+        cls.create_units('°C', 0, 2)
+        cls.create_units('W', -3, 3)
+        cls.create_units('VA', -3, 3)
 
     @classmethod
     def create_units(cls, base, minexp, maxexp):
         print("creating for base", base)
-        for i in range(minexp, maxexp, 3):
+        for i in range(minexp, maxexp+1, 3):
             fact = pow(10,i)
             unit = Unit()
             unit.Name = METRICS[fact] + base
@@ -76,3 +78,6 @@ class Unit(sqlp.PBaseTimed):
         self.Name = ""
         self.FactorToBase = 1.0
         self.BaseName = ""
+
+    def __str__(self):
+        return self.Name
