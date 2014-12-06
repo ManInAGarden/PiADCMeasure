@@ -32,7 +32,7 @@ to activate the new environment. Then use pip to install the rest.
 pip install cffi<br/>
 pip install smbus-cffi
 
-em>NOTE: This git repository contains example code made and owned by ABelectronics. Namely
+<em>NOTE: This git repository contains example code made and owned by ABelectronics. Namely
 these are the files:
 
 ABE_ADCPi.py<br/>
