@@ -56,6 +56,9 @@ class TkWindow:
     def setentryvalue(self, entry, value):
         entry.delete(0,END);
         entry.insert(0, value);
+
+    def setbuttontext(self, button, txt):
+        button['text'] = txt
         
     def makecombo(self, parent, ccol=1, crow=0, lcol=0, lrow=0, caption='',
                   width=None, **options):
@@ -68,6 +71,9 @@ class TkWindow:
             cbox.config(width=width)
             
         cbox.grid(row=crow, column=ccol)
+
+        return cbox
+    
 
     def makecheck(self, parent, ecol=0, erow=0, caption='', **options):
         cb = Checkbutton(parent, text=caption, **options)

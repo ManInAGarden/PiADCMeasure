@@ -53,11 +53,14 @@ class Unit(sqlp.PBaseTimed):
     @classmethod
     def create_vanilla_data(cls):
         print("creating vanilla data for units")
-        cls.create_units('V', -3, 3)
-        cls.create_units('A', -3, 3)
-        cls.create_units('s', -6, 0)
+        cls.create_units('V', -3, 3) #volt
+        cls.create_units('A', -3, 3) #ampere
+        cls.create_units('s', -6, 0) #seconds
         cls.create_units('Ah', -3, 3)
-        cls.create_units('°C', 0, 2)
+        cls.create_units('°C', 0, 2) #degrees celsius
+        cls.create_units('cd', 0, 2) #candela
+        cls.create_units('lx', 0, 2) #lux
+        cls.create_units('lm', 0, 2) #lumend
         cls.create_units('W', -3, 3)
         cls.create_units('VA', -3, 3)
 
