@@ -35,17 +35,33 @@ class ShowLogWindow(TkWindow):
 
 
     def setvaluesfor(self, serid):
-        self.values = []
-        values = Value.select("SeriesId='" + str(serid) +"'")
-        for val in values:
+        self.values = {}
+        dbvalues = Value.select("SeriesId='" + str(serid) +"'")
+        for val in dbvalues:
             if val.UnitId != None:
                 unitstr = self.unitdict[val.UnitId].Name
             else:
                 unitstr = ""
-                
-            self.values.append(MyValue(val.Id, val.t,
-                                       val.Name, val.Value,
-                                       unitstr))
+
+            if val.t in self.values:
+                print("reusing existing MyValue at <" + str(val.t) + ">")
+                currval = self.values[val.t]
+            else:
+                print("new MyValue for time <" + str(val.t) + ">")
+                currval = MyValue(val.t)
+                self.values[val.t] = currval
+
+            print("appending <"
+                  + str(val.Name)
+                  + ">, <"
+                  + str(val.Value)
+                  + "> <"
+                  + unitstr + ">")
+            currval.names.append(val.Name)
+            currval.values.append(val.Value)
+            currval.unitnames.append(unitstr)
+            currval.ids.append(val.Id)
+
                                
         self.setlistelements(self.valueslist, self.values)
 
@@ -85,12 +101,12 @@ class MySeries():
 
 class MyValue():
     
-    def __init__(self, uid, t, name, value, unitname):
-        self.Id = uid
+    def __init__(self, t):
+        self.ids = []
         self.t = t
-        self.name = name
-        self.value = value
-        self.unitname = unitname
+        self.names = []
+        self.values = []
+        self.unitnames = []
 
     def __str__(self):
-        return str(self.t) + " - " + self.name + ":" + str(self.value) + self.unitname
+        return str(self.t) + " - " + self(self.names) + ":" + str(self.values) + self(self.unitnames)

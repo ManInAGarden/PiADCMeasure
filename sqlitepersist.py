@@ -181,6 +181,8 @@ class PBase(object):
             answ = datetime.datetime.fromtimestamp(dta)
         elif type(tdesc) == Id:
             answ = uuid.UUID(dta)
+        elif type(tdesc) == Number:
+            answ = float(dta)
             
         
         return answ

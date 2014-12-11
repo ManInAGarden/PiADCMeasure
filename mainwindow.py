@@ -3,6 +3,7 @@ from tkinter import *
 from ABE_ADCPi import ADCPi
 from ABE_helpers import ABEHelpers
 import time
+import datetime
 import configparser
 import sqlitemeasures as sqm
 from tkwindow import *
@@ -46,12 +47,21 @@ class MainWindow(TkWindow):
 
     """gui elements have been loaded"""
     def loaded(self):
-        i2c_helper = ABEHelpers()
-        bus = i2c_helper.get_smbus()
-        self.adc = ADCPi(bus, ADCADR1, ADCADR2, ADCACCURACY)
+        self.adc = self.setup_adc(ADCADR1, ADCADR2, ADCACCURACY)
         self.load("defaultparams")
         self.show_values()
+
+    
+    def setup_adc(self, adr1, adr2, accu):
+        print("setting up adc with accuracy <"
+              + str(accu) + "> on addresses <"
+              + str(adr1) + "> and <"
+              + str(adr2) + ">")
+        i2c_helper = ABEHelpers()
+        bus = i2c_helper.get_smbus()
+        adc = ADCPi(bus, adr1, adr2, accu)
         
+        return adc
 
     """get the unitsettings from the combos"""
     def get_unit_settings(self):
@@ -188,12 +198,13 @@ class MainWindow(TkWindow):
             self.factors[idx] = fact
 
     def show_values(self):
+        self.T = datetime.datetime.now() #remember time of this measures
         for i in range(0, 8):
             val = self.adc.read_voltage(i+1)
             self.setentryvalue(self.dentries[i], val)
             self.convvalues[i] = val * self.factors[i] + self.bases[i]
             self.setentryvalue(self.conventries[i],
-                                       self.convvalues[i])
+                               self.convvalues[i])
         
         self.startbu.after(1000, self.show_values)
 
@@ -210,8 +221,10 @@ class MainWindow(TkWindow):
                     sqval.Name = "d" + str(i)
                     sqval.UnitId = self.allunits[self.usedunitidxs[i]].Id
                     sqval.Value = self.convvalues[i]
+                    sqval.t = self.T
                     sqval.flush()
 
+    """display the log window"""
     def show_log(self):
         logw = ShowLogWindow(Toplevel(), "Log DB")
 
