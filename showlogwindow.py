@@ -36,7 +36,7 @@ class ShowLogWindow(TkWindow):
 
     def setvaluesfor(self, serid):
         self.values = {}
-        dbvalues = Value.select("SeriesId='" + str(serid) +"'")
+        dbvalues = Value.select("SeriesId='" + str(serid) +"'", orderBy="t")
         for val in dbvalues:
             if val.UnitId != None:
                 unitstr = self.unitdict[val.UnitId].Name
@@ -44,26 +44,28 @@ class ShowLogWindow(TkWindow):
                 unitstr = ""
 
             if val.t in self.values:
-                print("reusing existing MyValue at <" + str(val.t) + ">")
+                #print("reusing existing MyValue at <" + str(val.t) + ">")
                 currval = self.values[val.t]
             else:
-                print("new MyValue for time <" + str(val.t) + ">")
+                #print("new MyValue for time <" + str(val.t) + ">")
                 currval = MyValue(val.t)
                 self.values[val.t] = currval
 
-            print("appending <"
-                  + str(val.Name)
-                  + ">, <"
-                  + str(val.Value)
-                  + "> <"
-                  + unitstr + ">")
+            #print("appending <"
+            #      + str(val.Name)
+            #      + ">, <"
+            #      + str(val.Value)
+            #      + "> <"
+            #     + unitstr + ">")
+            
             currval.names.append(val.Name)
-            currval.values.append(val.Value)
-            currval.unitnames.append(unitstr)
-            currval.ids.append(val.Id)
+            currval.values[val.Name] = val.Value
+            currval.unitnames[val.Name] = unitstr
+            currval.ids[val.Name] = val.Id
 
-                               
-        self.setlistelements(self.valueslist, self.values)
+        #set the list and have it sorted by time as stored in currval.t
+        self.setlistelements(self.valueslist,
+                             sorted(self.values.values(), key=lambda myv: myv.t))
 
 
 
@@ -96,17 +98,36 @@ class MySeries():
         
 
     def __str__(self):
-        return self.name + ", " + str(self.created)
+        return str(self.created) + " | " + self.name
 
 
 class MyValue():
     
     def __init__(self, t):
-        self.ids = []
+        self.ids = {}
         self.t = t
         self.names = []
-        self.values = []
-        self.unitnames = []
+        self.values = {}
+        self.unitnames = {}
 
+    def getdata(self, name):
+        if name in self.unitnames:
+            u = self.unitnames[name]
+        else:
+            u = ""
+
+        if name in self.values:
+            v = self.values[name]
+        else:
+            v = 0.0
+
+        return "{0:8.2f}{1}".format(v,u)
+        
     def __str__(self):
-        return str(self.t) + " - " + self(self.names) + ":" + str(self.values) + self(self.unitnames)
+        answ = str(self.t)
+
+        for i in range(0,8):
+            dx = "d" + str(i)
+            answ += " | " + self.getdata(dx)
+        
+        return answ

@@ -39,10 +39,16 @@ class MainWindow(TkWindow):
     def init_values(self):
         self.logstarted = False
         self.currlograte = 1.0 #Hz
+        self.quadfactors  = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.factors      = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         self.bases        = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.convvalues   = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.usedunitidxs = [-1, -1, -1, -1, -1, -1, -1, -1]
+        self.convsums     = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.convmeans    = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.convsigma    = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.calcs = 0
+        self.meansvalid = False
 
 
     """gui elements have been loaded"""
@@ -85,8 +91,9 @@ class MainWindow(TkWindow):
             'adc_accuracy' : ADCACCURACY,
             'lograte' : self.currlograte,
             'units' : unitss,
-            'factors' : self.factors,
-            'bases' : self.bases
+            'quadcoeffs' : self.quadfactors,
+            'lincoeffs' : self.factors,
+            'constants' : self.bases
             }
 
         with open(CFGFILENAME, 'w') as cfgfile:
@@ -113,9 +120,9 @@ class MainWindow(TkWindow):
         #print("searching for <" + us + ">")
         for u in self.allunits:
             if u.Name == us:
-                return self.allunits.index(u)
+                return self.allunits.index(u) + 1
 
-        return None
+        return 0
 
         
     """load settingsS from a file"""
@@ -125,8 +132,9 @@ class MainWindow(TkWindow):
         cfg = cp[cfgname]
         self.currlograte = float(cfg['lograte'])
         self.setentryvalue(self.lograteentry, self.currlograte)
-        factors = self.read_list(cfg['factors'])
-        bases = self.read_list(cfg['bases'])
+        quadfactors = self.read_list(cfg['quadcoeffs'])
+        factors = self.read_list(cfg['lincoeffs'])
+        bases = self.read_list(cfg['constants'])
         units = self.read_list(cfg['units'])
         
         for i in range(0,8):
@@ -139,11 +147,17 @@ class MainWindow(TkWindow):
             if len(units[i]) > 0:
                 uidx = self.findunit(units[i])
                 self.unitcombos[i].current(uidx)
-                self.usedunitidxs[i] = uidx
+                self.usedunitidxs[i] = uidx - 1
 
                 
     """toggle logging to the database"""
     def start_stop(self):
+        #only start logging with means calculated at least once
+        if not self.meansvalid:
+            return
+        else:
+            print("please wait")
+        
         self.logstarted = not self.logstarted
         if self.logstarted:
             self.currseries = sqm.Series()
@@ -157,7 +171,8 @@ class MainWindow(TkWindow):
             
     """exit from PiADCMeasure"""
     def exit_app(self):
-        self.root.quit()
+        self.parent.quit()
+        self.parent.destroy()
 
     
     """Initialise database entities"""
@@ -172,40 +187,54 @@ class MainWindow(TkWindow):
         self.allunits = sqm.Unit.select()
 
 
-    def find_base_idx(self, wid):
-        idx = self.baseentries.index(wid)
-        return idx
-
+    
     """one of the factor has changed - callback""" 
     def base_changed_cb(self, event):
-        idx = self.find_base_idx(event.widget)
+        idx = self.baseentries.index(event.widget)
         vals = event.widget.get()
         if len(vals) > 0:
             base = float(vals)
             self.bases[idx] = base
 
-            
-    def find_factor_idx(self, wid):
-        idx = self.factentries.index(wid)
-        return idx
 
     """one of the factor has changed - callback""" 
     def factor_changed_cb(self, event):
-        idx = self.find_factor_idx(event.widget)
+        idx = self.factentries.index(event.widget)
         vals = event.widget.get()
         if len(vals) > 0:
             fact = float(vals)
             self.factors[idx] = fact
+
+    def quad_factor_changed_cb(self, event):
+        idx = self.quadfactentries.index(event.widget)
+        vals = event.widget.get()
+        if len(vals) > 0:
+            qfact = float(vals)
+            self.quadfactors[idx] = qfact
+            
 
     def show_values(self):
         self.T = datetime.datetime.now() #remember time of this measures
         for i in range(0, 8):
             val = self.adc.read_voltage(i+1)
             self.setentryvalue(self.dentries[i], val)
-            self.convvalues[i] = val * self.factors[i] + self.bases[i]
+            cval = self.quadfactors[i] * val**2 + self.factors[i] * val + self.bases[i]
+            self.convvalues[i] = cval
+            self.convsums[i] += cval
+                
             self.setentryvalue(self.conventries[i],
                                self.convvalues[i])
-        
+
+        self.calcs += 1
+        if self.calcs > 10:
+            for i in range(0,8):
+                self.convmeans[i] = self.convsums[i]/self.calcs
+                self.convsums[i] = 0.0
+                self.setentryvalue(self.convmeansentries[i], self.convmeans[i])
+
+            self.meansvalid = True    
+            self.calcs = 0
+            
         self.startbu.after(1000, self.show_values)
 
     """do a log to the database"""
@@ -220,7 +249,7 @@ class MainWindow(TkWindow):
                     sqval.SeriesId = self.currseries.Id
                     sqval.Name = "d" + str(i)
                     sqval.UnitId = self.allunits[self.usedunitidxs[i]].Id
-                    sqval.Value = self.convvalues[i]
+                    sqval.Value = self.convmeans[i]
                     sqval.t = self.T
                     sqval.flush()
 
@@ -269,20 +298,38 @@ class MainWindow(TkWindow):
         self.makelabel(self.frame,
                        lcol = c, lrow=r, caption="unit");
 
+        allunitnames = [""]
+        for unit in self.allunits:
+            allunitnames.append(unit.Name)
+            
         self.unitcombos = []
         for i in range(0, 8):
             c += 1
             self.unitcombos.append(self.makecombo(self.frame, width = 9,
                        ccol=c, crow=r,
                        state='readonly',
-                       values = self.allunits))
-            
-        
-        #third line of elements - conversion factors
+                       values = allunitnames))
+
+        # line of elements - quadratic coefficients
         c = 0
         r += 1
         self.makelabel(self.frame,
-                       lcol = c, lrow=r, caption="conversion factor");
+                       lcol = c, lrow=r, caption="quadratic coefficient");
+
+        self.quadfactentries = []
+        for i in range(0,8): 
+            c += 1
+            self.quadfactentries.append(self.makeentry(self.frame,
+                       width=10, ecol=c, erow=r))
+            self.setentryvalue(self.quadfactentries[i], self.quadfactors[i]);
+            self.quadfactentries[i].bind("<FocusOut>", self.quad_factor_changed_cb)
+
+        
+        # line of elements - linear coefficients
+        c = 0
+        r += 1
+        self.makelabel(self.frame,
+                       lcol = c, lrow=r, caption="linear coefficient");
 
         self.factentries = []
         for i in range(0,8): 
@@ -294,11 +341,11 @@ class MainWindow(TkWindow):
         
         
 
-        #fourth line of elements - conversion bases
+        # line of elements - conversion bases
         c = 0
         r += 1
         self.makelabel(self.frame,
-                       lcol = c, lrow=r, caption="conversion bases");
+                       lcol = c, lrow=r, caption="constant");
 
         self.baseentries = []
         for i in range(0,8):
@@ -309,7 +356,7 @@ class MainWindow(TkWindow):
             self.baseentries[i].bind("<FocusOut>", self.base_changed_cb)
         
         
-        #fifth line of elements - the converted values
+        # line of elements - the converted values
         c = 0
         r += 1
         self.makelabel(self.frame,
@@ -319,6 +366,18 @@ class MainWindow(TkWindow):
         for i in range(0, 8):
             c += 1
             self.conventries.append(self.makeentry(self.frame,
+                       width=10, ecol=c, erow=r))
+
+        # line of elements - the converted values
+        c = 0
+        r += 1
+        self.makelabel(self.frame,
+                       lcol = c, lrow=r, caption="converted means");
+
+        self.convmeansentries = []
+        for i in range(0, 8):
+            c += 1
+            self.convmeansentries.append(self.makeentry(self.frame,
                        width=10, ecol=c, erow=r))
 
         #last row
@@ -350,3 +409,4 @@ if __name__ == "__main__":
     #print("entering main loop")
     root.mainloop()
     print("thank you for using PiADCMeasure")
+    

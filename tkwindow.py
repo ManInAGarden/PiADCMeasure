@@ -88,12 +88,34 @@ class TkWindow():
 
     """create a list at the givne position"""
     def makelist(self, parent, llcol=0, llrow=1, lcol=0, lrow=0,
-                 caption='List', elements=[], **options):
+                 caption='List', elements=[], mode='v',
+                 **options):
+
+        frame = Frame(parent)
+        frame.grid(row=lrow, column=lcol)
+        
+        hscroll = vscroll = None
+        
         if caption!='':
             Label(parent, text=caption).grid(row=llrow, column=llcol, sticky=W)
 
-        lb = Listbox(parent, **options)
-        lb.grid(row=lrow, column=lcol)
+        lb = Listbox(frame, **options)
+        
+
+        if 'v' in mode:
+            vscroll = Scrollbar(frame, orient=VERTICAL)
+            lb.config(yscrollcommand = vscroll.set)
+            vscroll.config(command=lb.yview)
+            vscroll.pack(side=RIGHT, fill=Y)
+
+        if 'h' in mode:
+            hscroll = Scrollbar(frame, orient=HROZONTAL)
+            lb.configure(xscrollcommand = hscroll.set)
+            hscroll.config(command = lb.xview)
+            hscroll.pack(side=BOTTOM, fill=X)
+            
+        lb.pack(side=LEFT, fill=BOTH, expand=1)
+        
         if len(elements)>0:
             self.setlistelements(elements)
         
