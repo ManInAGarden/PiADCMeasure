@@ -6,6 +6,7 @@ import time
 import datetime
 import configparser
 import sqlitemeasures as sqm
+from Fifo import *
 from tkwindow import *
 from showlogwindow import *
 
@@ -43,11 +44,17 @@ class MainWindow(TkWindow):
         self.factors      = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         self.bases        = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.convvalues   = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.convfifos    = []
         self.usedunitidxs = [-1, -1, -1, -1, -1, -1, -1, -1]
         self.convsums     = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.convmeans    = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.convsigma    = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.calcs = 0
+        self.calcmax = 10
+
+        for i in range(0,8):
+            self.convfifos.append(Fifo())
+            
         self.meansvalid = False
 
 
@@ -88,6 +95,7 @@ class MainWindow(TkWindow):
         cp[cfgname] = {
             'adc_adr1' : ADCADR1,
             'adc_adr2' : ADCADR2,
+            'slidingmeanscount' : self.calcmax,
             'adc_accuracy' : ADCACCURACY,
             'lograte' : self.currlograte,
             'units' : unitss,
@@ -131,6 +139,7 @@ class MainWindow(TkWindow):
         cp.read(CFGFILENAME)
         cfg = cp[cfgname]
         self.currlograte = float(cfg['lograte'])
+        self.calcmax = float(cfg['slidingmeanscount'])
         self.setentryvalue(self.lograteentry, self.currlograte)
         quadfactors = self.read_list(cfg['quadcoeffs'])
         factors = self.read_list(cfg['lincoeffs'])
@@ -152,11 +161,6 @@ class MainWindow(TkWindow):
                 
     """toggle logging to the database"""
     def start_stop(self):
-        #only start logging with means calculated at least once
-        if not self.meansvalid:
-            return
-        else:
-            print("please wait")
         
         self.logstarted = not self.logstarted
         if self.logstarted:
@@ -220,20 +224,20 @@ class MainWindow(TkWindow):
             self.setentryvalue(self.dentries[i], val)
             cval = self.quadfactors[i] * val**2 + self.factors[i] * val + self.bases[i]
             self.convvalues[i] = cval
-            self.convsums[i] += cval
-                
+            self.convfifos[i].push(cval)
             self.setentryvalue(self.conventries[i],
                                self.convvalues[i])
 
-        self.calcs += 1
-        if self.calcs > 10:
-            for i in range(0,8):
-                self.convmeans[i] = self.convsums[i]/self.calcs
-                self.convsums[i] = 0.0
+            self.convmeans[i] += cval/self.calcmax
+            
+            if self.calcs == self.calcmax:
+                self.convmeans[i] -= self.convfifos[i].pop()/self.calcmax
                 self.setentryvalue(self.convmeansentries[i], self.convmeans[i])
 
-            self.meansvalid = True    
-            self.calcs = 0
+        self.calcs += 1
+        if self.calcs > self.calcmax:
+            self.startbu.config(state='normal')
+            self.calcs = self.calcmax #stop this from going to infinty but keep > self,calcmax in next round
             
         self.startbu.after(1000, self.show_values)
 
@@ -271,6 +275,12 @@ class MainWindow(TkWindow):
 
         return men
 
+    """the user my have changed the log rate"""
+    def lograte_changed_cb(self, event):
+        vals = event.widget.get()
+        if len(vals) > 0:
+            lr = float(vals)
+            self.currlograte = lr
 
     """create the gui elements of this window"""
     def make_gui(self, title):
@@ -392,12 +402,14 @@ class MainWindow(TkWindow):
         self.lograteentry = self.makeentry(self.frame,
             width=10, ecol=c, erow=r, lcol=c-1, lrow=r,
             caption='log rate [Hz]')
+        self.lograteentry.bind("<FocusOut>", self.lograte_changed_cb)
         self.setentryvalue(self.lograteentry, self.currlograte)
         
         c += 1
         self.startbu = self.makebutton(self.frame,
                                        bcol = c, brow = r, caption="Start log",
-                                       command=self.start_stop)
+                                       command=self.start_stop,
+                                       state='disabled')
         
         self.frame.pack()
 
