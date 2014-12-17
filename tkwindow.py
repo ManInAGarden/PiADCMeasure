@@ -89,10 +89,11 @@ class TkWindow():
     """create a list at the givne position"""
     def makelist(self, parent, llcol=0, llrow=1, lcol=0, lrow=0,
                  caption='List', elements=[], mode='v',
+                 lrowspan=1, lcolspan=1,
                  **options):
 
         frame = Frame(parent)
-        frame.grid(row=lrow, column=lcol)
+        frame.grid(row=lrow, column=lcol, rowspan=lrowspan, columnspan=lcolspan)
         
         hscroll = vscroll = None
         

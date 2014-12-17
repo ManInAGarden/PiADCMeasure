@@ -10,19 +10,59 @@ class ShowLogWindow(TkWindow):
     def make_gui(self, title):
         super().make_gui(title)
 
-        self.serieslist = self.makelist(self.frame, lcol=0, lrow = 1,
-                      llcol = 0, llrow = 0, width = 100,
-                      caption="Log Series:")
+        c = r = 0
+        self.serbuframe = Frame(self.frame)
+        self.serbuframe.grid(column = c, row=r)
         
-        self.valueslist = self.makelist(self.frame, lcol=0, lrow = 3,
-                      llcol = 0, llrow = 2, width = 100,
+        self.editserbu = Button(self.serbuframe, text="Edit")
+        self.editserbu.pack(side=LEFT)
+        
+        self.dupserbu = Button(self.serbuframe, text="Duplicate")
+        self.dupserbu.pack(side=LEFT)
+        
+        self.diaserbu = Button(self.serbuframe, text="Diagram")
+        self.diaserbu.pack(side=LEFT)
+        
+        self.delserbu = Button(self.serbuframe, text="Delete", command=self.ser_del_cb)
+        self.delserbu.pack(side=LEFT)
+        
+
+        c = 0
+        r += 1
+        self.serieslist = self.makelist(self.frame, lcol=c, lrow = r+1,
+                      llcol = c, llrow = r, width = 100,
+                      lcolspan=4,
+                      caption="Log Series:")
+
+        r += 2
+        self.delvalbu = self.makebutton(self.frame, bcol = c, brow=r, caption="X")
+
+        c = 0
+        r += 1
+        self.valueslist = self.makelist(self.frame, lcol=c, lrow = r+1,
+                      llcol = c, llrow = r, width = 100,
+                      lcolspan=4,
                       caption="Measured Values:")
 
-        self.serieslist.bind("<Double-Button-1>", self.serdouble)
-        self.valueslist.bind("<Double-Button-1>", self.valdouble)
+        self.serieslist.bind("<<ListboxSelect>>", self.serselect)
+        self.valueslist.bind("<<ListboxSelect>>", self.valselect)
         self.frame.pack()
 
-    def serdouble(self, event):
+    def ser_del_cb(self):
+        selidx = self.serieslist.curselection()
+        print("Delete series at {0}".format(selidx))
+        if len(selidx) == 0:
+            return
+        
+        todel= self.series[int(selidx[0])]
+        sertodel = Series.select(whereClause="Id='" + str(todel.Id) + "'")
+        if len(sertodel)==1:
+            sertodel[0].delete()
+        else:
+            raise "Häh!"
+        
+
+    def serselect(self, event):
         sels = event.widget.curselection()
         if len(sels) == 0:
             return
@@ -30,7 +70,7 @@ class ShowLogWindow(TkWindow):
         self.setvaluesfor(self.series[int(sels[0])].Id)
 
     
-    def valdouble(self, event):
+    def valselect(self, event):
         pass
 
 

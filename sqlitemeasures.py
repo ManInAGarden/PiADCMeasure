@@ -23,6 +23,11 @@ class Series(sqlp.PBaseTimed):
         self.Description = ""
         self.Mode = ""
 
+    def delete(self):
+        #also delete all values under this series
+        Value.delete(whereClause="SeriesId='" + str(self.Id) + "'")
+        super().delete()
+        
     def __str__(self):
         return "Series: Id=" + str(self.Id) + " Name=" + self.Name + " Description=" + self.Description + " Created=" + str(self.Created)
 

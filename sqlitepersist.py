@@ -166,7 +166,19 @@ class PBase(object):
     def create_vanilla_data(cls):
         #overwrite me for vanilla data initialization
         pass
-        
+
+    @classmethod
+    def delete(cls, whereClause=None):
+        if whereClause==None:
+            stmt = "PURGE TABLE " + cls.TableName
+        else:
+            stmt = "DELETE FROM TABLE " + cls.TableName + " WHERE " + whereClause
+
+        con = sqlite3.connect(cls.FileName)
+        cls.log_statement(stmt)
+        with con:
+            cur.execute(stmt)
+                
 
     @classmethod
     def select(cls, whereClause=None, orderBy=None):
@@ -402,6 +414,23 @@ class PBase(object):
             raise Exception("flush failed for class" + str(cls))
 
         
+    def delete(self):
+        csl = self.__class__
+        con = self.connect_me()
+            
+        stmt = "DELETE FROM " ++ cls.TableName + " WHERE Id='" + str(self.Id) + "'"
+        cls.log_statement(stmt)
+        answ = True
+        with con:
+            try:
+                cur = con.cursor()
+                cur.execute(stmt)
+                answ = True
+            except Exception as exc:
+                print("Exception during delete \n" + str(exc))
+
+        return answ
+    
                 
 class PBaseTimed(PBase):
     TypeDict = PBase.TypeDict.copy()
@@ -411,10 +440,14 @@ class PBaseTimed(PBase):
     def flush(self, updateFirst = True):
         self.LastUpdate = datetime.datetime.now()
         super(PBaseTimed, self).flush(updateFirst)
+
+    def delete(self):
+        super(PBaseTimed, self).delete()
     
     def __init__(self):
         super(PBaseTimed, self).__init__()
         self.Created = datetime.datetime.today()
+        
 
 class PBaseTimedCached(PBaseTimed):
     TypeDict = PBaseTimed.TypeDict.copy()
@@ -432,7 +465,12 @@ class PBaseTimedCached(PBaseTimed):
 
         return erg
 
-        def flush(self):
-            cls = self.__class__
-            cls.SelCache.clear()
-            super(PBaseTimedCached, self).flush()
+    def flush(self):
+        cls = self.__class__
+        cls.SelCache.clear()
+        super(PBaseTimedCached, self).flush()
+
+    @classmethod
+    def delete(cls, whereClause=None):
+        cls,SelCache.clear()
+        super(PBaseTimed, cls).delete(whereClause)

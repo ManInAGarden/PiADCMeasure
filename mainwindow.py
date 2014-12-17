@@ -209,6 +209,13 @@ class MainWindow(TkWindow):
             fact = float(vals)
             self.factors[idx] = fact
 
+    def combochanged_cb(self, event):
+        idx = self.unitcombos.index(event.widget)
+        val = event.widget.get()
+        print(idx, val)
+        self.usedunitidxs[idx] = self.findunit(val)
+        
+        
     def quad_factor_changed_cb(self, event):
         idx = self.quadfactentries.index(event.widget)
         vals = event.widget.get()
@@ -220,19 +227,20 @@ class MainWindow(TkWindow):
     def show_values(self):
         self.T = datetime.datetime.now() #remember time of this measures
         for i in range(0, 8):
-            val = self.adc.read_voltage(i+1)
-            self.setentryvalue(self.dentries[i], val)
-            cval = self.quadfactors[i] * val**2 + self.factors[i] * val + self.bases[i]
-            self.convvalues[i] = cval
-            self.convfifos[i].push(cval)
-            self.setentryvalue(self.conventries[i],
-                               self.convvalues[i])
+            if self.usedunitidxs[i] > 0:
+                val = self.adc.read_voltage(i+1)
+                self.setentryvalue(self.dentries[i], val)
+                cval = self.quadfactors[i] * val**2 + self.factors[i] * val + self.bases[i]
+                self.convvalues[i] = cval
+                self.convfifos[i].push(cval)
+                self.setentryvalue(self.conventries[i],
+                                   self.convvalues[i])
 
-            self.convmeans[i] += cval/self.calcmax
+                self.convmeans[i] += cval/self.calcmax
             
-            if self.calcs == self.calcmax:
-                self.convmeans[i] -= self.convfifos[i].pop()/self.calcmax
-                self.setentryvalue(self.convmeansentries[i], self.convmeans[i])
+                if self.calcs == self.calcmax:
+                    self.convmeans[i] -= self.convfifos[i].pop()/self.calcmax
+                    self.setentryvalue(self.convmeansentries[i], self.convmeans[i])
 
         self.calcs += 1
         if self.calcs > self.calcmax:
@@ -319,6 +327,7 @@ class MainWindow(TkWindow):
                        ccol=c, crow=r,
                        state='readonly',
                        values = allunitnames))
+            self.unitcombos[i].bind("<<ComboboxSelected>>", self.combochanged_cb)
 
         # line of elements - quadratic coefficients
         c = 0
