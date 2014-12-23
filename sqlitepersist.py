@@ -123,7 +123,8 @@ class PBase(object):
     def initialize(cls, filename):
         #print("initializing", cls.TypeDict)
         cls.FileName = filename
-        cls.LogFile = os.path.split(cls.FileName)[0]
+        cls.LogFile = filename + ".log"
+        
 
     @classmethod
     def add_to_types(tdict):
@@ -144,10 +145,10 @@ class PBase(object):
     @classmethod
     def log_statement(cls, stmt):
         if cls.LogStatements!=None and cls.LogStatements==True:
-            if LogFile==None:
+            if cls.LogFile==None:
                 print('{0} - Executing: {1} '.format(datetime.datetime.now(), stmt))
             else:
-                cls.log_to_file(cls.LogFile, '{0} - Executing: {1} '.format(datetime.datetime.now(), stmt))
+                cls.log_to_file('{0} - Executing: {1} '.format(datetime.datetime.now(), stmt))
 
 
 
@@ -168,16 +169,16 @@ class PBase(object):
         pass
 
     @classmethod
-    def delete(cls, whereClause=None):
+    def class_delete(cls, whereClause=None):
         if whereClause==None:
-            stmt = "PURGE TABLE " + cls.TableName
+            stmt = "PURGE " + cls.TableName
         else:
-            stmt = "DELETE FROM TABLE " + cls.TableName + " WHERE " + whereClause
+            stmt = "DELETE FROM " + cls.TableName + " WHERE " + whereClause
 
         con = sqlite3.connect(cls.FileName)
         cls.log_statement(stmt)
         with con:
-            cur.execute(stmt)
+            con.execute(stmt)
                 
 
     @classmethod
@@ -415,10 +416,10 @@ class PBase(object):
 
         
     def delete(self):
-        csl = self.__class__
+        cls = self.__class__
         con = self.connect_me()
             
-        stmt = "DELETE FROM " ++ cls.TableName + " WHERE Id='" + str(self.Id) + "'"
+        stmt = "DELETE FROM " + cls.TableName + " WHERE Id='" + str(self.Id) + "'"
         cls.log_statement(stmt)
         answ = True
         with con:

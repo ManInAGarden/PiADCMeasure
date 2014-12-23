@@ -50,7 +50,7 @@ class ShowLogWindow(TkWindow):
 
     def ser_del_cb(self):
         selidx = self.serieslist.curselection()
-        print("Delete series at {0}".format(selidx))
+        #print("Delete series at {0}".format(selidx))
         if len(selidx) == 0:
             return
         
@@ -60,7 +60,10 @@ class ShowLogWindow(TkWindow):
             sertodel[0].delete()
         else:
             raise "Häh!"
-        
+
+        #reload the series and values
+        del self.series[int(selidx[0])]
+        self.show_lists()
 
     def serselect(self, event):
         sels = event.widget.curselection()
@@ -120,7 +123,11 @@ class ShowLogWindow(TkWindow):
         self.series = []
         for ser in series:
             self.series.append(MySeries(ser.Id, ser.Name, ser.Created))
-            
+
+        self.show_lists()
+
+
+    def show_lists(self):
         self.setlistelements(self.serieslist, self.series)
 
         if len(self.series) > 0:

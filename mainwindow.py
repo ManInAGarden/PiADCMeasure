@@ -188,6 +188,9 @@ class MainWindow(TkWindow):
         sqm.Series.initialize(self.db_file_name);
         sqm.Value.initialize(self.db_file_name);
         sqm.Unit.initialize(self.db_file_name);
+        sqm.Series.set_log_all_statements(True)
+        sqm.Value.set_log_all_statements(True)
+        sqm.Unit.set_log_all_statements(True)
         self.allunits = sqm.Unit.select()
 
 

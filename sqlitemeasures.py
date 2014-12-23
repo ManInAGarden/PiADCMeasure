@@ -25,7 +25,7 @@ class Series(sqlp.PBaseTimed):
 
     def delete(self):
         #also delete all values under this series
-        Value.delete(whereClause="SeriesId='" + str(self.Id) + "'")
+        Value.class_delete(whereClause="SeriesId='" + str(self.Id) + "'")
         super().delete()
         
     def __str__(self):
