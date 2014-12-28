@@ -276,13 +276,14 @@ class MainWindow(TkWindow):
     def create_menu(self):
         men = Menu(self.parent)
         self.parent.config(menu=men)
-        filemen = Menu(men)
-        men.add_cascade(label="File", menu=filemen)
-        filemen.add_command(label="Save", command=self.save_cb)
-        filemen.add_command(label="Load", command=self.load_cb)
-        filemen.add_command(label="Show Log", command=self.show_log)
+        filemen = Menu(men, tearoff=0)
+        men.add_cascade(label="File", menu=filemen,
+                        underline=0)
+        filemen.add_command(label="Save", command=self.save_cb, underline=0)
+        filemen.add_command(label="Load", command=self.load_cb, underline=0)
+        filemen.add_command(label="Show Log", command=self.show_log, underline=3)
         filemen.add_separator()
-        filemen.add_command(label="Exit", command=self.exit_app)
+        filemen.add_command(label="Exit", command=self.exit_app, underline=1)
 
         return men
 

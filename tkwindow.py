@@ -8,6 +8,7 @@ from tkinter.ttk import *
 class TkWindow():
 
     def __init__(self, parent, title, width=400, height=300):
+        self.registers = {}
         self.parent = parent #Tk or toplevel
         self.w = width
         self.h = height
@@ -16,9 +17,29 @@ class TkWindow():
 
     def loaded(self):
         pass # overload me
+
+    """register another window to receive a signal"""
+    def register(self, target, signame):
+        if not target in self.registers:
+            self.registers[target] = []
+
+        self.registers[target].append(signame)
+
+    """send a signal to all registered windows"""
+    def send(self, signame, data=None):
+        for targ, sigs in self.registers.items():
+            if sigs != None:
+                if signame in sigs:
+                    targ.receive(self, signame, data)
+                
+    """receive a signame"""
+    def receive(self, sender, signame, data):
+        print("received <" + signame + "> from <"
+              + str(sender) + "> with <" + str(data) +">")
+        #overload me in your receiving window for your application
+
     
     def make_gui(self, title):
-        
         self.parent.title(title)
         Style().configure("TFrame", padding=5)
         self.frame = Frame(self.parent,
@@ -33,8 +54,9 @@ class TkWindow():
         
     """create a multiline text entry field with a label"""
     def maketext(self, parent, lcol=0, lrow=0, erow=0, ecol=1, caption='', width=None, **options):
+        print(lrow, lcol)
         if caption != '':
-            Label(self, parent, text=caption).grid(row=lrow, column=lcol, sticky=NE)
+            Label(parent, text=caption).grid(row=lrow, column=lcol, sticky=NE)
             
         entry = Text(parent, **options)
         if width:
@@ -55,8 +77,12 @@ class TkWindow():
         return entry
 
     def setentryvalue(self, entry, value):
-        entry.delete(0,END);
-        entry.insert(0, value);
+        entry.delete(0,END)
+        entry.insert(0, value)
+
+    def settextvalue(self, entry, value):
+        entry.delete(0.0,END);
+        entry.insert(0.0, value);
 
     def setbuttontext(self, button, txt):
         button['text'] = txt
@@ -81,9 +107,9 @@ class TkWindow():
         cb.grid(row=erow, column=ecol, sticky=W)
         return cb
 
-    def makebutton(self, parent, bcol=0, brow=0, caption='Press me', **options):
+    def makebutton(self, parent, bcol=0, brow=0, caption='Press me', sticky=W, **options):
         bu = Button(parent, text=caption, **options)
-        bu.grid(row=brow, column=bcol, sticky=W)
+        bu.grid(row=brow, column=bcol, sticky=sticky)
         return bu
 
     """create a list at the givne position"""

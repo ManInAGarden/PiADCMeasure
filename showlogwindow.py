@@ -2,6 +2,8 @@
 from tkinter import *
 from tkwindow import *
 from sqlitemeasures import *
+from editserieswindow import *
+
 
 class ShowLogWindow(TkWindow):
 
@@ -14,16 +16,18 @@ class ShowLogWindow(TkWindow):
         self.serbuframe = Frame(self.frame)
         self.serbuframe.grid(column = c, row=r)
         
-        self.editserbu = Button(self.serbuframe, text="Edit")
+        self.editserbu = Button(self.serbuframe, text="E", width=1,
+                                command=self.ser_edit_cb)
         self.editserbu.pack(side=LEFT)
         
-        self.dupserbu = Button(self.serbuframe, text="Duplicate")
-        self.dupserbu.pack(side=LEFT)
+        #self.dupserbu = Button(self.serbuframe, text="Duplicate")
+        #self.dupserbu.pack(side=LEFT)
         
-        self.diaserbu = Button(self.serbuframe, text="Diagram")
+        self.diaserbu = Button(self.serbuframe, text="#",
+                               width=1)
         self.diaserbu.pack(side=LEFT)
         
-        self.delserbu = Button(self.serbuframe, text="Delete", command=self.ser_del_cb)
+        self.delserbu = Button(self.serbuframe, text="X", width=1, command=self.ser_del_cb)
         self.delserbu.pack(side=LEFT)
         
 
@@ -35,7 +39,8 @@ class ShowLogWindow(TkWindow):
                       caption="Log Series:")
 
         r += 2
-        self.delvalbu = self.makebutton(self.frame, bcol = c, brow=r, caption="X")
+        self.delvalbu = self.makebutton(self.frame, bcol = c, brow=r, caption="X",
+                                        width=1)
 
         c = 0
         r += 1
@@ -48,6 +53,26 @@ class ShowLogWindow(TkWindow):
         self.valueslist.bind("<<ListboxSelect>>", self.valselect)
         self.frame.pack()
 
+    """receive all my signals signame"""
+    def receive(self, sender, signame, data):
+        if signame=="SIGOK":
+            series = Series().select()
+            self.series = []
+            for ser in series:
+                self.series.append(MySeries(ser.Id, ser.Name, ser.Created))
+
+            self.show_lists()
+
+    def ser_edit_cb(self):
+        selidx = self.serieslist.curselection()
+        #print("Delete series at {0}".format(selidx))
+        if len(selidx) == 0:
+            return
+        
+        toedit= self.series[int(selidx[0])]
+        editwin = EditSeriesWindow(Toplevel(), seriesId=toedit.Id)
+        editwin.register(self, "SIGOK")
+        
     def ser_del_cb(self):
         selidx = self.serieslist.curselection()
         #print("Delete series at {0}".format(selidx))
@@ -64,6 +89,7 @@ class ShowLogWindow(TkWindow):
         #reload the series and values
         del self.series[int(selidx[0])]
         self.show_lists()
+
 
     def serselect(self, event):
         sels = event.widget.curselection()
@@ -145,7 +171,7 @@ class MySeries():
         
 
     def __str__(self):
-        return str(self.created) + " | " + self.name
+        return str(self.created) + " | " + self.name + " | " + self.description
 
 
 class MyValue():
