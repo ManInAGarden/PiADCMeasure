@@ -7,8 +7,9 @@ from tkinter.ttk import *
 
 class TkWindow():
 
-    def __init__(self, parent, title, width=400, height=300):
-        self.registers = {}
+    registers = {}
+    
+    def __init__(self, parent, title, width=400, height=300):    
         self.parent = parent #Tk or toplevel
         self.w = width
         self.h = height
@@ -19,24 +20,27 @@ class TkWindow():
         pass # overload me
 
     """register another window to receive a signal"""
-    def register(self, target, signame):
-        if not target in self.registers:
-            self.registers[target] = []
+    @classmethod
+    def register(cls, target, signame):
+        if not target in cls.registers:
+            cls.registers[target] = []
 
-        self.registers[target].append(signame)
+        cls.registers[target].append(signame)
 
     """send a signal to all registered windows"""
     def send(self, signame, data=None):
-        for targ, sigs in self.registers.items():
+        cls = self.__class__
+        for targ, sigs in cls.registers.items():
             if sigs != None:
                 if signame in sigs:
                     targ.receive(self, signame, data)
                 
     """receive a signame"""
     def receive(self, sender, signame, data):
-        print("received <" + signame + "> from <"
+        print("receive not overloaded but signal registered for <"
+              + signame + "> from <"
               + str(sender) + "> with <" + str(data) +">")
-        #overload me in your receiving window for your application
+        # overload me in your receiving window for your application
 
     
     def make_gui(self, title):

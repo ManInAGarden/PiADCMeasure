@@ -23,9 +23,6 @@ class ShowLogWindow(TkWindow):
                                 command=self.ser_edit_cb)
         self.editserbu.pack(side=LEFT)
         
-        #self.dupserbu = Button(self.serbuframe, text="Duplicate")
-        #self.dupserbu.pack(side=LEFT)
-        
         self.diaserbu = Button(self.serbuframe, text="#",
                                width=1,
                                command=self.ser_plot_cb)
@@ -56,10 +53,11 @@ class ShowLogWindow(TkWindow):
         self.serieslist.bind("<<ListboxSelect>>", self.serselect)
         self.valueslist.bind("<<ListboxSelect>>", self.valselect)
         self.frame.pack()
+        TkWindow.register(self, "SIG_EDIT_SER_OK")
 
-    """receive all my signals signame"""
+    """receive all my signals given in signame"""
     def receive(self, sender, signame, data):
-        if signame=="SIGOK":
+        if signame=="SIG_EDIT_SER_OK":
             series = Series().select()
             self.series = []
             for ser in series:
@@ -80,11 +78,10 @@ class ShowLogWindow(TkWindow):
     def ser_edit_cb(self):
         toedit= self.get_sel_ser()
         editwin = EditSeriesWindow(Toplevel(), seriesId=toedit.Id)
-        editwin.register(self, "SIGOK")
+        
 
     """delete selected series"""
     def ser_del_cb(self):
-        
         todel= self.get_sel_ser()
         sertodel = Series.select(whereClause="Id='" + str(todel.Id) + "'")
         if len(sertodel)==1:
@@ -92,11 +89,20 @@ class ShowLogWindow(TkWindow):
         else:
             raise "Häh!"
 
-        #reload the series and values
+        # reload the series and values
         del self.series[int(selidx[0])]
         self.show_lists()
 
-    """plot the selected series"""
+    """return a numpy array filled with the current values"""
+    def get_value_array(self, values, times, vd):
+        answ = []
+        for time in times:
+            v = values[time]
+            answ.append(v.values[vd])
+
+        return np.array(answ)
+
+    """plot the diagram for a selected series"""
     def ser_plot_cb(self):
         selidx = self.serieslist.curselection()
         if len(selidx) == 0:
@@ -107,11 +113,22 @@ class ShowLogWindow(TkWindow):
         if vals==None:
             return
 
-        x = np.array(vals.keys)
-        y = np.linspace(0, len(x))
-        line, = plt.plot(x, y)
+        # now create the diagram
+        times = []
+        for d in vals:
+            times.append(d)
+
+        fig, ax = plt.subplots()
+        x = np.array(times)
+        x1 = np.array(range(0,len(times)))
+        for d in vals[times[0]].values:
+            y = self.get_value_array(vals, x, d)
+            line = ax.plot(x1, y)
+            
         plt.show()
 
+    """set the values list with the measured values for the series with
+       the given id"""
     def setvaluesfor(self, id):
         vals = self.getvaluesfor(id)
         self.current_vals = vals
@@ -140,19 +157,12 @@ class ShowLogWindow(TkWindow):
                 unitstr = ""
 
             if val.t in values:
-                #print("reusing existing MyValue at <" + str(val.t) + ">")
+                # print("reusing existing MyValue at <" + str(val.t) + ">")
                 currval = values[val.t]
             else:
-                #print("new MyValue for time <" + str(val.t) + ">")
+                # print("new MyValue for time <" + str(val.t) + ">")
                 currval = MyValue(val.t)
                 values[val.t] = currval
-
-            #print("appending <"
-            #      + str(val.Name)
-            #      + ">, <"
-            #      + str(val.Value)
-            #      + "> <"
-            #     + unitstr + ">")
             
             currval.names.append(val.Name)
             currval.values[val.Name] = val.Value
@@ -166,7 +176,7 @@ class ShowLogWindow(TkWindow):
     def loaded(self):
         self.current_vals = None
         
-        #fill the lists now
+        # fill the lists now
         units = Unit().select()
         self.unitdict = {}
         for unit in units:

@@ -184,7 +184,7 @@ class MainWindow(TkWindow):
         self.db_file_name="/home/pi/piadcmeasure.db"
         self.db_log_file_name = "/home/pi/piadcmeasure.log"
         
-        print("Initilising database in " + self.db_file_name);
+        print("initialising database in " + self.db_file_name);
         sqm.Series.initialize(self.db_file_name);
         sqm.Value.initialize(self.db_file_name);
         sqm.Unit.initialize(self.db_file_name);

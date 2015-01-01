@@ -60,7 +60,7 @@ class EditSeriesWindow(TkWindow):
             self.my_series.Description = self.desc_entry.get(0.0, END)
             self.my_series.flush()
 
-        self.send("SIGOK", self.my_series)    
+        self.send("SIG_EDIT_SER_OK", self.my_series)    
         self.parent.destroy() #close this win
         
 
