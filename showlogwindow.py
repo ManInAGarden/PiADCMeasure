@@ -3,6 +3,9 @@ from tkinter import *
 from tkwindow import *
 from sqlitemeasures import *
 from editserieswindow import *
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 
 class ShowLogWindow(TkWindow):
@@ -24,7 +27,8 @@ class ShowLogWindow(TkWindow):
         #self.dupserbu.pack(side=LEFT)
         
         self.diaserbu = Button(self.serbuframe, text="#",
-                               width=1)
+                               width=1,
+                               command=self.ser_plot_cb)
         self.diaserbu.pack(side=LEFT)
         
         self.delserbu = Button(self.serbuframe, text="X", width=1, command=self.ser_del_cb)
@@ -63,23 +67,25 @@ class ShowLogWindow(TkWindow):
 
             self.show_lists()
 
-    def ser_edit_cb(self):
+    """get the selected MySeries object"""
+    def get_sel_ser(self):
         selidx = self.serieslist.curselection()
         #print("Delete series at {0}".format(selidx))
         if len(selidx) == 0:
-            return
+            return None
         
-        toedit= self.series[int(selidx[0])]
+        return self.series[int(selidx[0])]
+
+    """edit selected series"""
+    def ser_edit_cb(self):
+        toedit= self.get_sel_ser()
         editwin = EditSeriesWindow(Toplevel(), seriesId=toedit.Id)
         editwin.register(self, "SIGOK")
-        
+
+    """delete selected series"""
     def ser_del_cb(self):
-        selidx = self.serieslist.curselection()
-        #print("Delete series at {0}".format(selidx))
-        if len(selidx) == 0:
-            return
         
-        todel= self.series[int(selidx[0])]
+        todel= self.get_sel_ser()
         sertodel = Series.select(whereClause="Id='" + str(todel.Id) + "'")
         if len(sertodel)==1:
             sertodel[0].delete()
@@ -90,7 +96,28 @@ class ShowLogWindow(TkWindow):
         del self.series[int(selidx[0])]
         self.show_lists()
 
+    """plot the selected series"""
+    def ser_plot_cb(self):
+        selidx = self.serieslist.curselection()
+        if len(selidx) == 0:
+            return
+        
+        toplot = self.series[int(selidx[0])]
+        vals = self.current_vals
+        if vals==None:
+            return
 
+        x = np.array(vals.keys)
+        y = np.linspace(0, len(x))
+        line, = plt.plot(x, y)
+        plt.show()
+
+    def setvaluesfor(self, id):
+        vals = self.getvaluesfor(id)
+        self.current_vals = vals
+        self.setlistelements(self.valueslist,
+                             sorted(vals.values(), key=lambda myv: myv.t))
+        
     def serselect(self, event):
         sels = event.widget.curselection()
         if len(sels) == 0:
@@ -103,8 +130,8 @@ class ShowLogWindow(TkWindow):
         pass
 
 
-    def setvaluesfor(self, serid):
-        self.values = {}
+    def getvaluesfor(self, serid):
+        values = {}
         dbvalues = Value.select("SeriesId='" + str(serid) +"'", orderBy="t")
         for val in dbvalues:
             if val.UnitId != None:
@@ -112,13 +139,13 @@ class ShowLogWindow(TkWindow):
             else:
                 unitstr = ""
 
-            if val.t in self.values:
+            if val.t in values:
                 #print("reusing existing MyValue at <" + str(val.t) + ">")
-                currval = self.values[val.t]
+                currval = values[val.t]
             else:
                 #print("new MyValue for time <" + str(val.t) + ">")
                 currval = MyValue(val.t)
-                self.values[val.t] = currval
+                values[val.t] = currval
 
             #print("appending <"
             #      + str(val.Name)
@@ -132,13 +159,13 @@ class ShowLogWindow(TkWindow):
             currval.unitnames[val.Name] = unitstr
             currval.ids[val.Name] = val.Id
 
-        #set the list and have it sorted by time as stored in currval.t
-        self.setlistelements(self.valueslist,
-                             sorted(self.values.values(), key=lambda myv: myv.t))
+        return values
 
 
 
     def loaded(self):
+        self.current_vals = None
+        
         #fill the lists now
         units = Unit().select()
         self.unitdict = {}
@@ -171,7 +198,7 @@ class MySeries():
         
 
     def __str__(self):
-        return str(self.created) + " | " + self.name + " | " + self.description
+        return str(self.created) + " | " + self.name
 
 
 class MyValue():

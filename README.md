@@ -44,6 +44,23 @@ pip install smbus-cffi
 Now git clone this repository into the virtual environment so that you get a sub directory named PiADCMeasure under the 
 path you created with virtualenv above.
 
+Optinally you can install matplotlib for python3 if you want to use the diagram functions for logged data. I'm sure you want that. 
+
+In your virtual environment use:
+
+pip install numpy
+
+to install numpy for python3 in your virtualenv.
+
+For a pip install you'll most certainly be missing a dev-modlue named libpng-dev. Install this outside of your virtual
+envirtonment with
+
+sudo apt-get install libpng-dev
+
+Then install matplotlib in your virtualenv with the command:
+
+pip install matplotlib
+
 To start PiADCMeasure cd into that dircitory with your activated virtualenv and type
 
 python Main.py
