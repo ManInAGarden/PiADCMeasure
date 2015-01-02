@@ -1,22 +1,22 @@
 import sqlitepersist as sqlp
 import datetime
 
-METRICS = {0.0000000001:'n',
+METRICS = {0.0000000001: 'n',
            0.000001: 'u',
-           0.001:'m',
-           1.0:'',
-           1000.0:'k',
-           1000000.0:'M',
-           1000000000.0:'T'}
+           0.001: 'm',
+           1.0:' ',
+           1000.0: 'k',
+           1000000.0: 'M',
+           1000000000.0: 'T'}
+
 
 class Series(sqlp.PBaseTimed):
     TableName = "SERIES"
     TypeDict = sqlp.PBaseTimed.TypeDict.copy()
     TypeDict.update({"Name": sqlp.Text(30),
-        "Description": sqlp.Text(255),
-        "Mode":sqlp.Text(30)})
+                    "Description": sqlp.Text(255),
+                    "Mode": sqlp.Text(30)})
 
-        
     def __init__(self):
         super(Series, self).__init__()
         self.Name = "series with no name"
@@ -24,7 +24,7 @@ class Series(sqlp.PBaseTimed):
         self.Mode = ""
 
     def delete(self):
-        #also delete all values under this series
+        # also delete all values under this series
         Value.class_delete(whereClause="SeriesId='" + str(self.Id) + "'")
         super().delete()
         
@@ -53,7 +53,7 @@ class Unit(sqlp.PBaseTimedCached):
 
     @classmethod
     def create_units(cls, base, minexp, maxexp):
-        #print("creating for base", base)
+        # print("creating for base", base)
         for i in range(minexp, maxexp+1, 3):
             fact = pow(10,i)
             unit = Unit()
@@ -61,7 +61,7 @@ class Unit(sqlp.PBaseTimedCached):
             unit.FactorToBase = fact
             unit.BaseName = base
             unit.flush()
-            #print("created new unit", unit.Name)
+            # print("created new unit", unit.Name)
 
     def __init__(self):
         super(Unit, self).__init__()
@@ -70,12 +70,12 @@ class Unit(sqlp.PBaseTimedCached):
         self.BaseName = ""
 
 class Value(sqlp.PBaseTimed):
-    TableName="VALUE"
+    TableName = "VALUE"
     TypeDict = sqlp.PBaseTimed.TypeDict.copy()
     TypeDict.update({"t": sqlp.DateTime(),
-                     "Name" : sqlp.Text(30),
+                     "Name": sqlp.Text(30),
                      "Value": sqlp.Number(),
-                     "SeriesId":sqlp.ForeignKeyId(Series),
+                     "SeriesId": sqlp.ForeignKeyId(Series),
                      "UnitId": sqlp.ForeignKeyId(Unit)})
     
     def __init__(self):
