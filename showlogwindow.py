@@ -149,7 +149,7 @@ class ShowLogWindow(TkWindow):
 
     def getvaluesfor(self, serid):
         values = {}
-        dbvalues = Value.select("SeriesId='" + str(serid) +"'", orderBy="t")
+        dbvalues = Value.select("SeriesId='" + str(serid) +"'", order_by="t")
         for val in dbvalues:
             if val.UnitId != None:
                 unitstr = self.unitdict[val.UnitId].Name
