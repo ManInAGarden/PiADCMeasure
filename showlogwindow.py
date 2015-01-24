@@ -119,11 +119,11 @@ class ShowLogWindow(TkWindow):
             times.append(d)
 
         fig, ax = plt.subplots()
-        x = np.array(times)
-        x1 = np.array(range(0,len(times)))
+        x = np.array(sorted(times))
+        # x1 = np.array(range(0,len(times)))
         for d in vals[times[0]].values:
             y = self.get_value_array(vals, x, d)
-            line = ax.plot(x1, y)
+            line = ax.plot(x, y)
             
         plt.show()
 
