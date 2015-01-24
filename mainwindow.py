@@ -26,20 +26,19 @@ ADCRATES = [
     '18 bit - 3.75 sps/s'
     ]
 
-class MainWindow(TkWindow):
 
+class MainWindow(TkWindow):
 
     def __init__(self, parent, title):
         self.init_values()
         self.init_db()
         super().__init__(parent, title)
         #print("initialising main window")
-        
 
     """initialize class members that have to be present"""
     def init_values(self):
         self.logstarted = False
-        self.currlograte = 1.0 #Hz
+        self.currlograte = 1.0 # Hz
         self.quadfactors  = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.factors      = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         self.bases        = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -301,7 +300,7 @@ class MainWindow(TkWindow):
         self.menu = self.create_menu()
         r = 1
         c = 0
-        #first line of elements
+        # first line of elements
         
         self.makelabel(self.frame,
                        lcol = c, lrow=1, caption="ADC voltage [V]");
