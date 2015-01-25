@@ -290,7 +290,7 @@ class PBase(object):
            stored in attribute given by attname
         """
         attval = getattr(self, attname)
-        #print("resolving for <" + str(attval) + ">")
+        # print("resolving for <" + str(attval) + ">")
         
         if attval is None:
             return None
@@ -330,9 +330,8 @@ class PBase(object):
         komma = ""
         stmt = "UPDATE " + cls.TableName + " SET "
         for attname, tdesc in persatts.items():
-            if tdesc.IsPrimary:
-                stmt += komma + attname + "=" + self.get_value_db_style(attname, tdesc)
-                komma = ", "
+            stmt += komma + attname + "=" + self.get_value_db_style(attname, tdesc)
+            komma = ", "
             
         stmt += " WHERE "
 

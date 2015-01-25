@@ -57,6 +57,7 @@ class ShowLogWindow(TkWindow):
 
     """receive all my signals given in signame"""
     def receive(self, sender, signame, data):
+        # print("received  " + signame)
         if signame=="SIG_EDIT_SER_OK":
             series = Series().select()
             self.series = []
@@ -68,7 +69,7 @@ class ShowLogWindow(TkWindow):
     """get the selected MySeries object"""
     def get_sel_ser(self):
         selidx = self.serieslist.curselection()
-        #print("Delete series at {0}".format(selidx))
+        # print("Delete series at {0}".format(selidx))
         if len(selidx) == 0:
             return None
         

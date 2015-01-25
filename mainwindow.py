@@ -124,7 +124,7 @@ class MainWindow(TkWindow):
 
 
     def findunit(self, us):
-        #print("searching for <" + us + ">")
+        # print("searching for <" + us + ">")
         for u in self.allunits:
             if u.Name == us:
                 return self.allunits.index(u) + 1
@@ -214,7 +214,7 @@ class MainWindow(TkWindow):
     def combochanged_cb(self, event):
         idx = self.unitcombos.index(event.widget)
         val = event.widget.get()
-        print(idx, val)
+        # print(idx, val)
         self.usedunitidxs[idx] = self.findunit(val)
         
         
